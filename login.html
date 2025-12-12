@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Login - Tree Tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+    body {
+        margin: 0;
+        font-family: "Poppins", sans-serif;
+        background: linear-gradient(135deg, #2b7a0b, #65c466);
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+    }
+
+    /* Floating circles background */
+    .circle {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        animation: float 8s infinite ease-in-out;
+    }
+
+    @keyframes float {
+        0% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
+        100% { transform: translateY(0); }
+    }
+
+    .circle:nth-child(1) { width: 180px; height: 180px; left: 10%; top: 20%; }
+    .circle:nth-child(2) { width: 120px; height: 120px; right: 15%; top: 10%; }
+    .circle:nth-child(3) { width: 160px; height: 160px; left: 20%; bottom: 15%; }
+
+    /* Login Box (Glass Effect) */
+    .login-box {
+        width: 320px;
+        padding: 25px;
+        background: rgba(255, 255, 255, 0.25);
+        backdrop-filter: blur(12px);
+        border-radius: 18px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        text-align: center;
+        z-index: 10;
+        animation: fadeIn 1s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+    .login-box h2 {
+        color: white;
+        margin-bottom: 15px;
+        font-weight: 600;
+    }
+
+    input {
+        width: 100%;
+        padding: 12px;
+        margin: 10px 0;
+        border-radius: 10px;
+        border: none;
+        outline: none;
+        font-size: 15px;
+    }
+
+    button {
+        width: 100%;
+        padding: 12px;
+        background: #1b5e20;
+        border: none;
+        border-radius: 10px;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: 0.2s;
+    }
+
+    button:hover {
+        background: #144a18;
+        letter-spacing: 1px;
+    }
+
+    .hint {
+        margin-top: 10px;
+        color: white;
+        font-size: 13px;
+        opacity: 0.8;
+    }
+</style>
+
+</head>
+<body>
+
+<!-- Floating animated circles -->
+<div class="circle"></div>
+<div class="circle"></div>
+<div class="circle"></div>
+
+<!-- Login box -->
+<div class="login-box">
+    <h2>🌳 Tree Tracker Login</h2>
+
+    <input id="user" type="text" placeholder="Enter username">
+    <input id="pass" type="password" placeholder="Enter password">
+    
+    <button onclick="checkLogin()">Login</button>
+    <p class="hint">Any username and password will work 😊</p>
+</div>
+
+<script>
+function checkLogin() {
+    let u = document.getElementById("user").value.trim();
+    let p = document.getElementById("pass").value.trim();
+
+    if (u !== "" && p !== "") {
+        sessionStorage.setItem("treeTrackerLoggedIn", "true");
+        sessionStorage.setItem("treeTrackerUser", u); // save username
+        window.location.href = "index.html";
+    } else {
+        alert("Please enter both username and password!");
+    }
+}
+</script>
+
+</body>
+</html>
+

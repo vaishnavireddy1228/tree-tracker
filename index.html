@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tree Plantation Tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- PDF Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+body{
+    margin:0;
+    font-family:"Poppins",sans-serif;
+    background:#f1fff1;
+}
+.header{
+    background:linear-gradient(135deg,#2b7a0b,#65c466);
+    color:white;
+    padding:20px;
+    text-align:center;
+    font-size:22px;
+    border-bottom-left-radius:20px;
+    border-bottom-right-radius:20px;
+}
+.container{
+    padding:15px;
+}
+.form-box{
+    background:white;
+    padding:15px;
+    border-radius:15px;
+    box-shadow:0 6px 20px rgba(0,0,0,0.1);
+    margin-bottom:20px;
+}
+input{
+    width:100%;
+    padding:12px;
+    margin:8px 0;
+    border-radius:10px;
+    border:1px solid #b6b6b6;
+    font-size:15px;
+}
+button{
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    border:none;
+    border-radius:12px;
+    background:#1b5e20;
+    color:white;
+    font-size:16px;
+    font-weight:600;
+    cursor:pointer;
+}
+.tree-img{
+    width:100%;
+    height:180px;
+    border-radius:12px;
+    object-fit:cover;
+    margin-bottom:10px;
+}
+.card{
+    background:white;
+    padding:15px;
+    border-radius:15px;
+    margin-bottom:20px;
+    box-shadow:0 6px 20px rgba(0,0,0,0.1);
+}
+.edit-btn{background:#1a73e8;color:white;padding:8px 12px;border-radius:8px;}
+.delete-btn{background:#d32f2f;color:white;padding:8px 12px;border-radius:8px;}
+.map-btn{
+    background:#2e7d32;
+    color:white;
+    padding:8px 12px;
+    border-radius:10px;
+    text-decoration:none;
+    display:inline-block;
+    margin-top:10px;
+}
+.logout{
+    background:#d32f2f;
+    color:white;
+    padding:12px;
+    border-radius:10px;
+    text-align:center;
+    cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div class="header">
+    🌳 Tree Plantation Tracker
+    <div style="font-size:14px" id="welcomeUser"></div>
+</div>
+
+<div class="container">
+
+<!-- FORM -->
+<div class="form-box">
+    <h3>Add Tree</h3>
+
+    <input id="treeName" placeholder="Tree Name">
+    <input id="location" placeholder="Location">
+    <input id="date" type="date">
+
+    <!-- GPS Auto Detect -->
+    <input id="lat" placeholder="Latitude (auto)" readonly>
+    <input id="lon" placeholder="Longitude (auto)" readonly>
+
+    <button type="button" onclick="getLocation()">📍 Get Exact Location</button>
+
+    <input id="image" type="file" accept="image/*">
+
+    <button onclick="addTree()">Add Tree</button>
+</div>
+
+<!-- DASHBOARD -->
+<div class="form-box">
+    <h3>Dashboard</h3>
+    <p>Total Trees: <b id="totalTrees">0</b></p>
+    <p>Trees This Month: <b id="monthTrees">0</b></p>
+</div>
+
+<h2>Planted Trees</h2>
+<div id="treeList"></div>
+
+<div class="logout" onclick="logout()">Logout</div>
+</div>
+
+<script>
+
+/* -------- LOGIN CHECK -------- */
+if(sessionStorage.getItem("treeTrackerLoggedIn") !== "true"){
+    window.location.href = "login.html";
+}
+
+/* SHOW USERNAME */
+let user = sessionStorage.getItem("treeTrackerUser");
+document.getElementById("welcomeUser").innerText = "Welcome, " + user + "!";
+
+/* -------- LOAD + SAVE TREES -------- */
+function loadTrees(){
+    return JSON.parse(localStorage.getItem("trees")) || [];
+}
+function saveTrees(trees){
+    localStorage.setItem("trees", JSON.stringify(trees));
+}
+
+/* -------- AUTO GPS DETECT -------- */
+function getLocation(){
+    if(!navigator.geolocation){
+        alert("Your device does not support GPS.");
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        (position)=>{
+            document.getElementById("lat").value = position.coords.latitude.toFixed(6);
+            document.getElementById("lon").value = position.coords.longitude.toFixed(6);
+            alert("Exact location detected ✔");
+        },
+        (error)=>{
+            if(error.code === error.PERMISSION_DENIED){
+                alert("Please allow location permission.\nIf blocked:\n1. Tap lock icon\n2. Go to Permissions\n3. Enable Location");
+            } else {
+                alert("Unable to detect location.");
+            }
+        },
+        {enableHighAccuracy:true, timeout:10000, maximumAge:0}
+    );
+}
+
+/* -------- ADD TREE -------- */
+function addTree(){
+    let name = treeName.value.trim();
+    let loc = location.value.trim();
+    let dateVal = date.value.trim();
+    let imgFile = image.files[0];
+    let lat = document.getElementById("lat").value.trim();
+    let lon = document.getElementById("lon").value.trim();
+
+    if(!name || !loc || !dateVal || !imgFile){
+        alert("Fill all details + upload a photo!");
+        return;
+    }
+
+    let reader = new FileReader();
+    reader.onload = function(e){
+        let trees = loadTrees();
+        trees.push({
+            name:name,
+            location:loc,
+            date:dateVal,
+            image:e.target.result,
+            lat:lat,
+            lon:lon
+        });
+
+        saveTrees(trees);
+        showTrees();
+    };
+
+    reader.readAsDataURL(imgFile);
+}
+
+/* -------- SHOW TREES -------- */
+function showTrees(){
+    let trees = loadTrees();
+    treeList.innerHTML = "";
+
+    totalTrees.innerText = trees.length;
+
+    let month = new Date().getMonth() + 1;
+    monthTrees.innerText = trees.filter(t => Number(t.date.split("-")[1]) === month).length;
+
+    trees.forEach((t,i)=>{
+        let mapBtn = (t.lat && t.lon)
+        ? `<a class="map-btn" href="https://www.google.com/maps?q=${t.lat},${t.lon}" target="_blank">Exact Location</a>`
+        : `<a class="map-btn" href="https://www.google.com/maps/search/${t.location}" target="_blank">Open in Maps</a>`;
+
+        treeList.innerHTML += `
+        <div class="card">
+            <img src="${t.image}" class="tree-img">
+
+            <h3>${t.name}</h3>
+            <p><b>Location:</b> ${t.location}</p>
+            <p><b>Date:</b> ${t.date}</p>
+
+            ${t.lat ? `<p><b>Lat:</b> ${t.lat}</p>` : ""}
+            ${t.lon ? `<p><b>Lon:</b> ${t.lon}</p>` : ""}
+
+            <button class="edit-btn" onclick="editTree(${i})">Edit</button>
+            <button class="delete-btn" onclick="deleteTree(${i})">Delete</button>
+
+            ${mapBtn}
+        </div>`;
+    });
+}
+
+/* -------- DELETE TREE -------- */
+function deleteTree(i){
+    let trees = loadTrees();
+    trees.splice(i,1);
+    saveTrees(trees);
+    showTrees();
+}
+
+/* -------- EDIT TREE -------- */
+function editTree(i){
+    let trees = loadTrees();
+    let t = trees[i];
+
+    let nn = prompt("New name:", t.name);
+    let nl = prompt("New location:", t.location);
+    let nd = prompt("New date:", t.date);
+
+    if(nn && nl && nd){
+        t.name = nn;
+        t.location = nl;
+        t.date = nd;
+        saveTrees(trees);
+        showTrees();
+    }
+}
+
+/* -------- LOGOUT -------- */
+function logout(){
+    sessionStorage.clear();
+    window.location.href = "login.html";
+}
+
+/* -------- INIT -------- */
+showTrees();
+</script>
+
+</body>
+</html>
